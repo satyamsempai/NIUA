@@ -7,8 +7,9 @@ import AIChat from './components/AIChat';
 
 export default function App() {
   const [selectedTenant, setSelectedTenant] = useState('All');
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Verify shape on startup by logging a few records to the console (Phase 1)
+  // Verify shape on startup by logging a few records to the console
   useEffect(() => {
     console.log("--- NIUA Properties Data Wiring Verification ---");
     console.log("Total records loaded:", propertiesData.length);
@@ -22,6 +23,13 @@ export default function App() {
     return [...new Set(propertiesData.map(record => record.tenant))].sort();
   }, []);
 
+  // Simulate institutional database loading feedback on city transition (triggers skeleton wave)
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, [selectedTenant]);
+
   // Filter records based on selected city (memoized)
   const filteredRecords = useMemo(() => {
     return filterByTenant(propertiesData, selectedTenant);
@@ -32,7 +40,7 @@ export default function App() {
     return aggregateKPIs(filteredRecords);
   }, [filteredRecords]);
 
-  // Pre-aggregate comparison chart data across ALL 10 cities (always static, regardless of filter)
+  // Pre-aggregate comparison chart data across ALL 10 cities (static, regardless of filter)
   const chartsData = useMemo(() => {
     return aggregateChartsData(propertiesData);
   }, []);
@@ -46,22 +54,24 @@ export default function App() {
     <div className="app-container">
       {/* Main Dashboard Panel */}
       <main className="main-content">
+        
+        {/* Minimalist Institutional Header */}
         <header className="dashboard-header">
           <div className="dashboard-title-area">
-            <h1>Property Tax Analytics</h1>
+            <h1>Portfolio Overview</h1>
             <p>National Institute of Urban Affairs (NIUA) • Property Register Portal</p>
           </div>
 
           {/* Controlled Dropdown Select for City Filtering */}
           <div className="filter-container">
-            <label htmlFor="city-select" className="filter-label">City Filter</label>
+            <label htmlFor="city-select" className="filter-label">Jurisdiction</label>
             <select
               id="city-select"
               className="custom-select"
               value={selectedTenant}
               onChange={(e) => setSelectedTenant(e.target.value)}
             >
-              <option value="All">All Cities</option>
+              <option value="All">All Municipalities</option>
               {cities.map((city) => (
                 <option key={city} value={city}>
                   {city}
@@ -71,18 +81,18 @@ export default function App() {
           </div>
         </header>
 
-        {/* 4 Metric KPI Cards Section */}
+        {/* 4 Metric KPI Cards Section with dynamic sparklines */}
         <section aria-label="KPI Cards Section">
-          <KPICards kpis={kpis} />
+          <KPICards kpis={kpis} records={filteredRecords} isLoading={isLoading} />
         </section>
 
-        {/* 10-City Comparative Visualization Charts Section */}
+        {/* 10-City Comparative Visualization & Ledger Section */}
         <section aria-label="Analytical Visualizations Section">
           <DashboardCharts chartsData={chartsData} />
         </section>
       </main>
 
-      {/* Persistent conversational AI helper sidebar */}
+      {/* Floating conversational AI Command Center */}
       <AIChat contextString={aiContextString} />
     </div>
   );
